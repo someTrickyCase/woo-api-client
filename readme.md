@@ -1,4 +1,4 @@
-# Empty TS-scripts teamplate
+# Empty TS-scripts template
 
 how to use:
 
