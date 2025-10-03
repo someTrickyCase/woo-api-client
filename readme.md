@@ -5,10 +5,9 @@ Minimal TypeScript template for Node.js scripts and utilities.
 ## Project Structure
 
 project/
-├── app/ # Source directory (.ts files)
-├── build/ # Compiled output (.js files)
-└── tsconfig.json # TypeScript configuration
-text
+- ├── app/ # Source directory (.ts files)
+- ├── build/ # Compiled output (.js files)
+- └── tsconfig.json # TypeScript configuration
 
 
 ## Prerequisites
