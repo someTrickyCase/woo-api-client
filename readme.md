@@ -19,8 +19,8 @@ text
 ## Installation
 
 ```bash
-git clone <repository-url>
-cd <project-directory>
+git clone someTrickyCase/tstemplate
+cd tstemplate
 npm install
 ```
 Available Scripts
