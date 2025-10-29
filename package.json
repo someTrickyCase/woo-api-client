@@ -1,16 +1,16 @@
 {
 	"name": "@sometrickycase/woo-api-client",
-  "version": "1.0.0-beta.1",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "public"
+  	"version": "1.0.0-beta.1",
+  	"publishConfig": {
+    	"registry": "https://npm.pkg.github.com",
+    	"access": "public"
   },
 	"description": "TypeScript WooCommerce REST API client with multi-store support, batch operations and image upload",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "files": [
-    "dist/**/*",
-    "README.md"
+  	"main": "dist/src/index.js",
+  	"types": "dist/src/index.d.ts",
+  	"files": [
+    	"dist/**/*",
+    	"README.md"
   ],
 	"scripts": {
 		"dev": "npm run build:live",
@@ -18,35 +18,35 @@
 		"build:live": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
 
 		"test": "jest --silent",
-    "test:unit": "jest --testPathPatterns='src/__tests__/unit/.*\\.test\\.ts'",
-    "test:e2e": "jest --testPathPatterns='src/__tests__/e2e/.*\\.test\\.ts'",
-    "test:coverage": "jest --coverage",
-    "test:watch": "jest --watch",
+    	"test:unit": "jest --testPathPatterns='src/__tests__/unit/.*\\.test\\.ts'",
+    	"test:e2e": "jest --testPathPatterns='src/__tests__/e2e/.*\\.test\\.ts'",
+    	"test:coverage": "jest --coverage",
+    	"test:watch": "jest --watch",
     
-    "prepack": "npm run build && npm run test",
-    "pack": "npm run prepack && npm pack",
-    "prepublishOnly": "npm run build && npm run test",
-    "publish:dry": "npm run prepack && npm publish --dry-run"
+    	"prepack": "npm run build && npm run test:unit",
+    	"pack": "npm run prepack && npm pack",
+    	"prepublishOnly": "npm run build && npm run test",
+    	"publish:dry": "npm run prepack && npm publish --dry-run"
 	},
    "keywords": [
-    "woocommerce",
-    "api",
-    "client",
-    "rest",
-    "typescript",
-    "ecommerce",
-    "wordpress",
-    "multistore",
-    "batch",
-    "images"
+    	"woocommerce",
+		"api",
+    	"client",
+    	"rest",
+    	"typescript",
+    	"ecommerce",
+    	"wordpress",
+    	"multistore",
+    	"batch",
+    	"images"
   ],
 	"author": {
-    "name": "Kirill Poskrebyshev",
-    "url": "https://github.com/someTrickyCase"
+    	"name": "Kirill Poskrebyshev",
+    	"url": "https://github.com/someTrickyCase"
   },
    "repository": {
-    "type": "git",
-    "url": "https://github.com/someTrickyCase/woo-api-client.git"
+    	"type": "git",
+    	"url": "https://github.com/someTrickyCase/woo-api-client.git"
   },
 	"license": "MIT",
 	"devDependencies": {
