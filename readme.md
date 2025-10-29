@@ -1,10 +1,10 @@
 # WooCommerce API Client
 
-![Tests](https://img.shields.io/github/actions/workflow/status/your-username/woo-api-client/ci.yml?branch=main)
+![Tests](https://img.shields.io/github/actions/workflow/status/someTrickyCase/woo-api-client/ci.yml?branch=main)
 ![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
 ![Version](https://img.shields.io/npm/v/woo-api-client)
 ![License](https://img.shields.io/npm/l/woo-api-client)
-![Security](https://img.shields.io/github/actions/workflow/status/your-username/woo-api-client/security.yml?branch=main&label=security)
+![Security](https://img.shields.io/github/actions/workflow/status/someTrickyCase/woo-api-client/security.yml?branch=main&label=security)
 
 A TypeScript WooCommerce REST API client with multi-store support, batch operations, and image upload capabilities.
 
