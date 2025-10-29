@@ -1,0 +1,45 @@
+# Source files
+src/
+!dist/
+
+# Tests
+__tests__/
+test-images/
+*.test.ts
+*.spec.ts
+
+# Configuration files
+jest.config.*
+tsconfig.json
+.gitignore
+.npmignore
+
+# Environment files
+.env*
+.env.example
+
+# Development files
+.nodemon.json
+.editorconfig
+
+# Documentation (unless you want to include it)
+docs/
+
+# GitHub
+.github/
+
+# CI
+.travis.yml
+.github/
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# Lock files (include package-lock.json for installations)
+# package-lock.json
+
+# TypeScript source maps
+*.ts.map
