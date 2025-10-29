@@ -1,7 +1,7 @@
 import Store from "./store";
 import { CredentialsType } from "./types/types";
 
-export default class WooClient {
+export class WooClient {
 	stores: Map<string, CredentialsType> = new Map();
 
 	addStore(storeKey: string, credentials: CredentialsType) {

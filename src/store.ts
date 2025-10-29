@@ -116,10 +116,10 @@ export default class Store {
 		const seekedSkus: string[] = Object.keys(priceUpdates);
 		const idSkuPairs = await this.getProductIdsBySkus(seekedSkus);
 
-		let idPricePairs: { id: number; price: number }[] = [];
+		let idPricePairs: { id: number; regular_price: string }[] = [];
 		idSkuPairs.forEach((pair) => {
 			if (!pair.id) return;
-			idPricePairs.push({ id: pair.id, price: priceUpdates[pair.sku] });
+			idPricePairs.push({ id: pair.id, regular_price: priceUpdates[pair.sku].toString() });
 		});
 
 		const connection = new Connection(this.credentials.store_url, {

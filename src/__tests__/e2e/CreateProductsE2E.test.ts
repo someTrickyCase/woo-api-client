@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import path from "path";
 import Store from "../../store";
-import WooClient from "../../index";
+import { WooClient } from "../../index";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 

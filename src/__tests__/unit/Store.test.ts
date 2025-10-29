@@ -267,9 +267,9 @@ describe("Store", () => {
 				"/wp-json/wc/v3/products/batch",
 				JSON.stringify({
 					update: [
-						{ id: 101, price: 1000 },
-						{ id: 102, price: 2000 },
-						{ id: 103, price: 3000 },
+						{ id: 101, regular_price: "1000" },
+						{ id: 102, regular_price: "2000" },
+						{ id: 103, regular_price: "3000" },
 					],
 				})
 			);
@@ -297,7 +297,7 @@ describe("Store", () => {
 				"/wp-json/wc/v3/products/batch",
 				JSON.stringify({
 					update: [
-						{ id: 101, price: 1000 },
+						{ id: 101, regular_price: "1000" },
 						// SKU002 skipped
 					],
 				})

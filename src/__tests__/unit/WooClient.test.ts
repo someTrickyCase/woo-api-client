@@ -1,4 +1,4 @@
-import WooClient from "../../index";
+import { WooClient } from "../../index";
 import Store from "../../store"; // We'll create this later
 import { CredentialsType } from "../../types/types";
 

@@ -22,7 +22,7 @@
     "test:e2e": "jest --testPathPatterns='src/__tests__/e2e/.*\\.test\\.ts'",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
-
+    
     "prepack": "npm run build && npm run test",
     "pack": "npm run prepack && npm pack",
     "prepublishOnly": "npm run build && npm run test",
