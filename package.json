@@ -19,9 +19,8 @@
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
 
-    "prepack": "npm run build && npm run test",
-    "pack": "npm run prepack && npm pack",
-    "publish:dry": "npm run prepack && npm publish --dry-run"
+    "pack": "npm run build && npm run test && npm pack",
+    "publish:dry": "npm run pack && npm publish --dry-run"
 	},
    "keywords": [
     "woocommerce",
