@@ -1,6 +1,6 @@
-import WooClient from "../index";
-import Store from "../store"; // We'll create this later
-import { CredentialsType } from "../types/types";
+import WooClient from "../../index";
+import Store from "../../store"; // We'll create this later
+import { CredentialsType } from "../../types/types";
 
 describe("WooClient", () => {
 	let client: WooClient;

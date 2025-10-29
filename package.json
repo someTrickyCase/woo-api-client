@@ -14,8 +14,8 @@
 		"build:live": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
 
 		"test": "jest --silent",
-    "test:unit": "jest --testPathPattern=\"src/__tests__/.*\\.test\\.ts\"",
-    "test:e2e": "jest --testPathPattern=\"src/__tests__/e2e/.*\\.test\\.ts\"",
+    "test:unit": "jest --testPathPatterns='src/__tests__/unit/.*\\.test\\.ts'",
+    "test:e2e": "jest --testPathPatterns='src/__tests__/e2e/.*\\.test\\.ts'",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
 

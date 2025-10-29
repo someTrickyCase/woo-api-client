@@ -1,7 +1,7 @@
-import Store from "../store";
-import Connection from "../services/Connection";
+import Store from "../../store";
+import Connection from "../../services/Connection";
 
-jest.mock("../services/Connection");
+jest.mock("../../services/Connection");
 
 describe("Store", () => {
 	let store: Store;

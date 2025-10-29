@@ -1,4 +1,4 @@
-import Connection from "../services/Connection";
+import Connection from "../../services/Connection";
 
 global.fetch = jest.fn();
 
