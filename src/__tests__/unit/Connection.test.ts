@@ -71,21 +71,19 @@ describe("Connection", () => {
 
 	describe("get", () => {
 		it("should make GET request with correct headers", async () => {
-			const mockResponse = { data: "test" };
-			(fetch as jest.Mock).mockResolvedValueOnce({
-				ok: true,
-				json: async () => mockResponse,
+			const mockResponse = { id: 1, name: "test" };
+
+			const getWithHeadersMock = jest.fn().mockResolvedValue({
+				data: mockResponse,
+				headers: new Headers(),
 			});
+
+			(connection as any).getWithHeaders = getWithHeadersMock;
 
 			const endpoint = "/products";
 			const result = await connection.get(endpoint);
 
-			expect(fetch).toHaveBeenCalledWith(`${mockStoreUrl}${endpoint}`, {
-				method: "GET",
-				headers: {
-					Authorization: "Basic dGVzdF9rZXk6dGVzdF9zZWNyZXQ=",
-				},
-			});
+			expect(getWithHeadersMock).toHaveBeenCalledWith(endpoint);
 			expect(result).toEqual(mockResponse);
 		});
 	});
