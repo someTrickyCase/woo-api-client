@@ -5,7 +5,6 @@ import { ManufacturerType } from "../../types/types";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
-// Функция для получения всех данных через пагинацию
 async function fetchAllPages(baseUrl: string, authHeader: string): Promise<any[]> {
 	let allResults: any[] = [];
 	let page = 1;
@@ -25,7 +24,6 @@ async function fetchAllPages(baseUrl: string, authHeader: string): Promise<any[]
 		const data = await response.json();
 		allResults.push(...data);
 
-		// Получаем общее количество страниц из заголовков
 		const totalPagesHeader = response.headers.get("X-WP-TotalPages");
 		totalPages = totalPagesHeader ? parseInt(totalPagesHeader) : 1;
 

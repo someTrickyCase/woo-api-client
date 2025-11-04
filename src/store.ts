@@ -143,14 +143,12 @@ export default class Store {
 		const BATCH_SIZE = 50;
 		const batchedData: ProductType[][] = [];
 
-		// Разбиваем на батчи
 		for (let i = 0; i < productsData.length; i += BATCH_SIZE) {
 			batchedData.push(productsData.slice(i, i + BATCH_SIZE));
 		}
 
 		const allResults: any[] = [];
 
-		// Обрабатываем каждый батч
 		for (let batchIndex = 0; batchIndex < batchedData.length; batchIndex++) {
 			const batch = batchedData[batchIndex];
 
@@ -231,13 +229,11 @@ export default class Store {
 				allResults.push(batchResult);
 				console.log(`✅ Batch ${batchIndex + 1} completed successfully`);
 
-				// Пауза между батчами (кроме последнего)
 				if (batchIndex < batchedData.length - 1) {
 					await new Promise((resolve) => setTimeout(resolve, 200));
 				}
 			} catch (error) {
 				console.error(`❌ Failed to process batch ${batchIndex + 1}:`, error);
-				// Продолжаем со следующими батчами, но сохраняем информацию об ошибке
 				allResults.push({
 					create: [],
 					error: `Batch ${batchIndex + 1} failed: ${
@@ -247,10 +243,8 @@ export default class Store {
 			}
 		}
 
-		// Объединяем результаты всех батчей
 		return {
 			create: allResults.flatMap((result) => result.create || []),
-			// Добавляем информацию об ошибках если есть
 			...(allResults.some((result) => result.error) && {
 				errors: allResults.filter((result) => result.error).map((result) => result.error),
 			}),

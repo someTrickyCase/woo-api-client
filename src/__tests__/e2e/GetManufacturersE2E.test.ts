@@ -4,7 +4,6 @@ import Store from "../../store";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
-// Функция для получения всех данных через пагинацию
 async function fetchAllPages(baseUrl: string, authHeader: string): Promise<any[]> {
 	let allResults: any[] = [];
 	let page = 1;
@@ -56,7 +55,6 @@ describe("Store.getManufacturers (e2e)", () => {
 
 		const authHeader = "Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
 
-		// Получаем все атрибуты с пагинацией
 		const attributes = await fetchAllPages(
 			`${store_url}/wp-json/wc/v3/products/attributes`,
 			authHeader
@@ -68,7 +66,6 @@ describe("Store.getManufacturers (e2e)", () => {
 			throw new Error("Manufacturer attribute not found in direct fetch");
 		}
 
-		// Получаем всех производителей с пагинацией
 		directFetchedManufacturers = await fetchAllPages(
 			`${store_url}/wp-json/wc/v3/products/attributes/${manufacturerAttribute.id}/terms`,
 			authHeader
