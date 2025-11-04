@@ -140,73 +140,120 @@ export default class Store {
 			return { create: [] };
 		}
 
-		const connection = new Connection(this.credentials.store_url, {
-			key: this.credentials.wc_key,
-			secret: this.credentials.wc_secret,
-		});
+		const BATCH_SIZE = 50;
+		const batchedData: ProductType[][] = [];
 
-		const createData = await Promise.all(
-			productsData.map(async (product) => {
-				let allImageIds: { id: number }[] = [];
-				let featuredImageId: number | null = null;
+		// Разбиваем на батчи
+		for (let i = 0; i < productsData.length; i += BATCH_SIZE) {
+			batchedData.push(productsData.slice(i, i + BATCH_SIZE));
+		}
 
-				if (product.featuredImage) {
-					try {
-						const featuredImages = await this.uploadImages([product.featuredImage]);
-						if (featuredImages.length > 0) {
-							featuredImageId = featuredImages[0].id;
-							allImageIds.push(featuredImages[0]);
-						}
-					} catch (error) {
-						console.error("Failed to upload featured image:", error);
-					}
-				}
+		const allResults: any[] = [];
 
-				if (product.images && product.images.length > 0) {
-					const galleryImagesToUpload = product.featuredImage
-						? product.images.filter((img) => img !== product.featuredImage)
-						: product.images;
+		// Обрабатываем каждый батч
+		for (let batchIndex = 0; batchIndex < batchedData.length; batchIndex++) {
+			const batch = batchedData[batchIndex];
 
-					if (galleryImagesToUpload.length > 0) {
+			console.log(
+				`Processing batch ${batchIndex + 1}/${batchedData.length} (${batch.length} products)...`
+			);
+
+			const connection = new Connection(this.credentials.store_url, {
+				key: this.credentials.wc_key,
+				secret: this.credentials.wc_secret,
+			});
+
+			const createData = await Promise.all(
+				batch.map(async (product) => {
+					let allImageIds: { id: number }[] = [];
+					let featuredImageId: number | null = null;
+
+					if (product.featuredImage) {
 						try {
-							const galleryImages = await this.uploadImages(galleryImagesToUpload);
-							allImageIds = [...allImageIds, ...galleryImages];
+							const featuredImages = await this.uploadImages([product.featuredImage]);
+							if (featuredImages.length > 0) {
+								featuredImageId = featuredImages[0].id;
+								allImageIds.push(featuredImages[0]);
+							}
 						} catch (error) {
-							console.error("Failed to upload gallery images:", error);
+							console.error("Failed to upload featured image:", error);
 						}
 					}
-				}
 
-				const productData: DestributedProductType = {
-					name: product.name,
-					sku: product.sku,
-					regular_price: product.price.toString(),
-					...(product.description && { description: product.description }),
-					...(product.shortDescription && { short_description: product.shortDescription }),
-					...(product.attributes && { attributes: product.attributes }),
-					...(product.categories && { categories: product.categories }),
-				};
+					if (product.images && product.images.length > 0) {
+						const galleryImagesToUpload = product.featuredImage
+							? product.images.filter((img) => img !== product.featuredImage)
+							: product.images;
 
-				if (allImageIds.length > 0) {
-					if (featuredImageId) {
-						productData.images = [
-							{ id: featuredImageId },
-							...allImageIds.filter((img) => img.id !== featuredImageId),
-						];
-					} else {
-						productData.images = allImageIds;
+						if (galleryImagesToUpload.length > 0) {
+							try {
+								const galleryImages = await this.uploadImages(galleryImagesToUpload);
+								allImageIds = [...allImageIds, ...galleryImages];
+							} catch (error) {
+								console.error("Failed to upload gallery images:", error);
+							}
+						}
 					}
+
+					const productData: DestributedProductType = {
+						name: product.name,
+						sku: product.sku,
+						regular_price: product.price.toString(),
+						...(product.description && { description: product.description }),
+						...(product.shortDescription && { short_description: product.shortDescription }),
+						...(product.attributes && { attributes: product.attributes }),
+						...(product.categories && { categories: product.categories }),
+					};
+
+					if (allImageIds.length > 0) {
+						if (featuredImageId) {
+							productData.images = [
+								{ id: featuredImageId },
+								...allImageIds.filter((img) => img.id !== featuredImageId),
+							];
+						} else {
+							productData.images = allImageIds;
+						}
+					}
+
+					return productData;
+				})
+			);
+
+			try {
+				const batchResult = await connection.post(
+					"/wp-json/wc/v3/products/batch",
+					JSON.stringify({
+						create: createData,
+					})
+				);
+
+				allResults.push(batchResult);
+				console.log(`✅ Batch ${batchIndex + 1} completed successfully`);
+
+				// Пауза между батчами (кроме последнего)
+				if (batchIndex < batchedData.length - 1) {
+					await new Promise((resolve) => setTimeout(resolve, 200));
 				}
+			} catch (error) {
+				console.error(`❌ Failed to process batch ${batchIndex + 1}:`, error);
+				// Продолжаем со следующими батчами, но сохраняем информацию об ошибке
+				allResults.push({
+					create: [],
+					error: `Batch ${batchIndex + 1} failed: ${
+						error instanceof Error ? error.message : "unknown error"
+					}`,
+				});
+			}
+		}
 
-				return productData;
-			})
-		);
-
-		return await connection.post(
-			"/wp-json/wc/v3/products/batch",
-			JSON.stringify({
-				create: createData,
-			})
-		);
+		// Объединяем результаты всех батчей
+		return {
+			create: allResults.flatMap((result) => result.create || []),
+			// Добавляем информацию об ошибках если есть
+			...(allResults.some((result) => result.error) && {
+				errors: allResults.filter((result) => result.error).map((result) => result.error),
+			}),
+		};
 	}
 }

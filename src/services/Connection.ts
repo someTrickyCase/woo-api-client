@@ -44,7 +44,6 @@ function withPagination(maxPages: number = 50) {
 		const originalMethod = descriptor.value!;
 
 		descriptor.value = async function (this: any, ...args: Parameters<T>): Promise<any> {
-			console.log("Pagination decorator called with args:", args);
 			let allResults: any[] = [];
 			let page = 1;
 			let totalPages = 1;

@@ -137,7 +137,7 @@ describe("Store", () => {
 		});
 	});
 
-	describe("Store.getProductIdsBySkus", () => {
+	describe("getProductIdsBySkus", () => {
 		let store: Store;
 		let mockGet: jest.Mock;
 
@@ -323,7 +323,7 @@ describe("Store", () => {
 
 			mockPost.mockResolvedValueOnce(mockBatchResponse);
 
-			await store.createProducts(productsData);
+			const result = await store.createProducts(productsData);
 
 			expect(mockPost).toHaveBeenCalledWith(
 				"/wp-json/wc/v3/products/batch",
@@ -339,6 +339,79 @@ describe("Store", () => {
 					],
 				})
 			);
+			expect(result).toEqual(mockBatchResponse);
+		});
+
+		it("should split large number of products into batches", async () => {
+			// Создаем 75 товаров (должно разбиться на 2 батча по 50 и 25)
+			const productsData = Array.from({ length: 75 }, (_, i) => ({
+				name: `Product ${i + 1}`,
+				sku: `SKU${i + 1}`,
+				price: 100 + i,
+			}));
+
+			const mockBatchResponse1 = {
+				create: Array.from({ length: 50 }, (_, i) => ({ id: i + 1, name: `Product ${i + 1}` })),
+			};
+
+			const mockBatchResponse2 = {
+				create: Array.from({ length: 25 }, (_, i) => ({ id: i + 51, name: `Product ${i + 51}` })),
+			};
+
+			mockPost.mockResolvedValueOnce(mockBatchResponse1).mockResolvedValueOnce(mockBatchResponse2);
+
+			const result = await store.createProducts(productsData);
+
+			// Проверяем что было 2 вызова (2 батча)
+			expect(mockPost).toHaveBeenCalledTimes(2);
+
+			// Проверяем первый батч (50 товаров)
+			expect(mockPost).toHaveBeenNthCalledWith(
+				1,
+				"/wp-json/wc/v3/products/batch",
+				expect.stringContaining('"create":')
+			);
+
+			// Проверяем второй батч (25 товаров)
+			expect(mockPost).toHaveBeenNthCalledWith(
+				2,
+				"/wp-json/wc/v3/products/batch",
+				expect.stringContaining('"create":')
+			);
+
+			// Проверяем что результаты объединены
+			expect(result.create).toHaveLength(75);
+			expect(result.create[0]).toEqual({ id: 1, name: "Product 1" });
+			expect(result.create[49]).toEqual({ id: 50, name: "Product 50" });
+			expect(result.create[50]).toEqual({ id: 51, name: "Product 51" });
+		});
+
+		it("should handle batch failures gracefully", async () => {
+			const productsData = Array.from({ length: 60 }, (_, i) => ({
+				name: `Product ${i + 1}`,
+				sku: `SKU${i + 1}`,
+				price: 100 + i,
+			}));
+
+			const mockBatchResponse1 = {
+				create: Array.from({ length: 50 }, (_, i) => ({ id: i + 1, name: `Product ${i + 1}` })),
+			};
+
+			const batchError = new Error("API Error");
+			mockPost.mockResolvedValueOnce(mockBatchResponse1).mockRejectedValueOnce(batchError);
+
+			const result = await store.createProducts(productsData);
+
+			expect(mockPost).toHaveBeenCalledTimes(2);
+			expect(result.create).toHaveLength(50); // Только успешные из первого батча
+			expect(result.errors).toBeDefined();
+		});
+
+		it("should return empty result for empty input", async () => {
+			const result = await store.createProducts([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
 		});
 
 		it("should handle products with partial descriptions", async () => {
