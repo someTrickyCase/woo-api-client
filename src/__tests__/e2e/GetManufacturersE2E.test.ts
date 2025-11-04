@@ -4,6 +4,36 @@ import Store from "../../store";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
+// Функция для получения всех данных через пагинацию
+async function fetchAllPages(baseUrl: string, authHeader: string): Promise<any[]> {
+	let allResults: any[] = [];
+	let page = 1;
+	let totalPages = 1;
+
+	while (page <= totalPages) {
+		const response = await fetch(`${baseUrl}?page=${page}&per_page=100`, {
+			headers: {
+				Authorization: authHeader,
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`);
+		}
+
+		const data = await response.json();
+		allResults.push(...data);
+
+		// Получаем общее количество страниц из заголовков
+		const totalPagesHeader = response.headers.get("X-WP-TotalPages");
+		totalPages = totalPagesHeader ? parseInt(totalPagesHeader) : 1;
+
+		page++;
+	}
+
+	return allResults;
+}
+
 describe("Store.getManufacturers (e2e)", () => {
 	let store: Store;
 	let directFetchedManufacturers: any[];
@@ -24,12 +54,13 @@ describe("Store.getManufacturers (e2e)", () => {
 		};
 		store = new Store(credentials);
 
-		const attributesResponse = await fetch(`${store_url}/wp-json/wc/v3/products/attributes`, {
-			headers: {
-				Authorization: "Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64"),
-			},
-		});
-		const attributes = await attributesResponse.json();
+		const authHeader = "Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
+
+		// Получаем все атрибуты с пагинацией
+		const attributes = await fetchAllPages(
+			`${store_url}/wp-json/wc/v3/products/attributes`,
+			authHeader
+		);
 
 		const manufacturerAttribute = attributes.find((attr: any) => attr.slug === "pa_proizvoditel");
 
@@ -37,15 +68,11 @@ describe("Store.getManufacturers (e2e)", () => {
 			throw new Error("Manufacturer attribute not found in direct fetch");
 		}
 
-		const manufacturersResponse = await fetch(
+		// Получаем всех производителей с пагинацией
+		directFetchedManufacturers = await fetchAllPages(
 			`${store_url}/wp-json/wc/v3/products/attributes/${manufacturerAttribute.id}/terms`,
-			{
-				headers: {
-					Authorization: "Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64"),
-				},
-			}
+			authHeader
 		);
-		directFetchedManufacturers = await manufacturersResponse.json();
 	});
 
 	it("should return the same manufacturers as direct API call", async () => {

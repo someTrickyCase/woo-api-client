@@ -70,20 +70,26 @@ describe("Connection", () => {
 	});
 
 	describe("get", () => {
-		it("should make GET request with correct headers", async () => {
-			const mockResponse = { id: 1, name: "test" };
+		it("should make GET request with correct headers and handle pagination", async () => {
+			const mockResponse = [{ id: 1, name: "test" }];
+			const mockHeaders = new Headers();
+			mockHeaders.set("X-WP-TotalPages", "1");
 
-			const getWithHeadersMock = jest.fn().mockResolvedValue({
-				data: mockResponse,
-				headers: new Headers(),
+			(fetch as jest.Mock).mockResolvedValueOnce({
+				ok: true,
+				json: async () => mockResponse,
+				headers: mockHeaders,
 			});
-
-			(connection as any).getWithHeaders = getWithHeadersMock;
 
 			const endpoint = "/products";
 			const result = await connection.get(endpoint);
 
-			expect(getWithHeadersMock).toHaveBeenCalledWith(endpoint);
+			expect(fetch).toHaveBeenCalledWith(`${mockStoreUrl}${endpoint}?page=1&per_page=100`, {
+				method: "GET",
+				headers: {
+					Authorization: "Basic dGVzdF9rZXk6dGVzdF9zZWNyZXQ=",
+				},
+			});
 			expect(result).toEqual(mockResponse);
 		});
 	});

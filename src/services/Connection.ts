@@ -137,8 +137,7 @@ export default class Connection {
 	}
 
 	@withRetry(3, 1000)
-	async get(endpoint: string): Promise<any[]> {
-		const result = await this.getWithHeaders(endpoint);
-		return result.data;
+	async get(endpoint: string): Promise<any> {
+		return await this.getWithHeaders(endpoint);
 	}
 }
