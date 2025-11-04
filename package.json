@@ -18,19 +18,19 @@
 		"build:live": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
 
 		"test": "jest --silent",
-    	"test:unit": "jest --testPathPatterns='src/__tests__/unit/.*\\.test\\.ts'",
-    	"test:e2e": "jest --testPathPatterns='src/__tests__/e2e/.*\\.test\\.ts'",
-    	"test:coverage": "jest --coverage",
-    	"test:watch": "jest --watch",
-    
-    	"prepack": "npm run build && npm run test:unit",
-    	"pack": "npm run prepack && npm pack",
-    	"prepublishOnly": "npm run build && npm run test",
-    	"publish:dry": "npm run prepack && npm publish --dry-run"
+    "test:unit": "jest --testPathPatterns='src/__tests__/unit/.*\\.test\\.ts'",
+    "test:e2e": "jest --testPathPatterns='src/__tests__/e2e/.*\\.test\\.ts'",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+  
+    "prepack": "npm run build && npm run test:unit",
+    "pack": "npm run prepack && npm pack",
+    "prepublishOnly": "npm run build && npm run test",
+    "publish:dry": "npm run prepack && npm publish --dry-run"
 	},
    "keywords": [
     	"woocommerce",
-		"api",
+		  "api",
     	"client",
     	"rest",
     	"typescript",
