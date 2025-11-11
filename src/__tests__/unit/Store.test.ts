@@ -97,6 +97,18 @@ describe("Store", () => {
 		});
 	});
 
+	describe("getAllProducts", () => {
+		it("should call connection with correct endpoint", async () => {
+			const mockProduct = [{ id: 1, name: "product-1" }];
+			mockGet.mockResolvedValueOnce(mockProduct);
+
+			const result = await store.getAllProducts();
+
+			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products");
+			expect(result).toEqual(mockProduct);
+		});
+	});
+
 	describe("getAttributes", () => {
 		it("should call connection with correct endpoint", async () => {
 			const mockAttributes = [{ id: 1, name: "Color" }];

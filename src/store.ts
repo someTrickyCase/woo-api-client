@@ -53,6 +53,14 @@ export default class Store {
 		return await connection.get("/wp-json/wc/v3/products/categories");
 	}
 
+	async getAllProducts() {
+		const connection = new Connection(this.credentials.store_url, {
+			key: this.credentials.wc_key,
+			secret: this.credentials.wc_secret,
+		});
+		return await connection.get("/wp-json/wc/v3/products");
+	}
+
 	async getAttributes() {
 		const connection = new Connection(this.credentials.store_url, {
 			key: this.credentials.wc_key,
