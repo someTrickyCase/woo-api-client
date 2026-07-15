@@ -82,6 +82,23 @@ describe("Create Products Integration Test", () => {
 		const testProductWithoutImagesSku = `TEST-NOIMG-${timestamp}-2`;
 
 		testSkus = [testProductWithImagesSku, testProductWithoutImagesSku];
+
+		const categories = await store.getCategories();
+		const attributes = await store.getAttributes();
+		const tags = await store.getTags();
+		const manufacturers = await store.getManufacturers();
+
+		expect(categories.length).toBeGreaterThan(0);
+		expect(attributes.length).toBeGreaterThan(0);
+		expect(tags.length).toBeGreaterThan(0);
+		expect(manufacturers.length).toBeGreaterThan(0);
+
+		const manufacturerAttribute = attributes.find(
+			(attr: any) => attr.slug === "pa_proizvoditel",
+		);
+
+		expect(manufacturerAttribute).toBeDefined();
+
 		const testProducts = [
 			{
 				name: `Test Product With Images - ${timestamp}`,
@@ -90,6 +107,15 @@ describe("Create Products Integration Test", () => {
 				description: "This product should have images attached",
 				shortDescription: "With images",
 				images: [path.resolve(process.cwd(), "test-images/image1.png")],
+
+				categories: [{ id: categories[0].id }],
+				tags: [{ id: tags[0].id }],
+				attributes: [
+					{
+						id: manufacturerAttribute!.id,
+						options: [manufacturers[0].name],
+					},
+				],
 			},
 			{
 				name: `Test Product Without Images - ${timestamp}`,
@@ -97,14 +123,15 @@ describe("Create Products Integration Test", () => {
 				price: 2999,
 				description: "This product should have no images",
 				shortDescription: "No images",
-				// No images array
 			},
 		];
+
 		const createResult = await store.createProducts(testProducts);
 
 		expect(createResult.create).toHaveLength(2);
 		expect(createResult.create[0]).toHaveProperty("id");
 		expect(createResult.create[1]).toHaveProperty("id");
+
 		await new Promise((resolve) => setTimeout(resolve, 5000));
 
 		for (const sku of testSkus) {
@@ -123,22 +150,47 @@ describe("Create Products Integration Test", () => {
 			);
 
 			expect(response.ok).toBe(true);
+
 			const products = await response.json();
 
 			expect(Array.isArray(products)).toBe(true);
-			expect(products).toHaveLength(1); // Should find exactly one product per SKU
+			expect(products).toHaveLength(1);
 
 			const product = products[0];
+
 			expect(product.sku).toBe(sku);
 			expect(product.name).toContain("Test Product");
 			expect(product.price).toBeDefined();
 
 			if (sku === testProductWithImagesSku) {
-				expect(product.images).toHaveLength(1); // Should have one image
+				// Images
+				expect(product.images).toHaveLength(1);
 				expect(product.images[0]).toHaveProperty("id");
 				expect(product.images[0]).toHaveProperty("src");
+
+				// Category
+				expect(
+					product.categories.some(
+						(category: any) => category.id === categories[0].id,
+					),
+				).toBe(true);
+
+				// Tag
+				expect(product.tags.some((tag: any) => tag.id === tags[0].id)).toBe(
+					true,
+				);
+
+				// Manufacturer attribute
+				const manufacturer = product.attributes.find(
+					(attr: any) => attr.id === manufacturerAttribute!.id,
+				);
+
+				expect(manufacturer).toBeDefined();
+				expect(manufacturer.options).toContain(manufacturers[0].name);
 			} else {
-				expect(product.images).toHaveLength(0); // Should have no images
+				expect(product.images).toHaveLength(0);
+				// expect(product.categories).toHaveLength(0);
+				expect(product.tags).toHaveLength(0);
 			}
 		}
 	}, 120000);

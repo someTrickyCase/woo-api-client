@@ -6,6 +6,14 @@ export type CredentialsType = {
 	wp_app_pass?: string;
 };
 
+export type CreateAttributeType = {
+	name: string;
+	slug?: string;
+	type?: "select";
+	order_by?: "menu_order" | "name" | "name_num" | "id";
+	has_archives?: boolean;
+};
+
 export type CategoryType = {
 	id: number;
 	name: string;
@@ -15,10 +23,22 @@ export type CategoryType = {
 	parent: CategoryType;
 };
 
+export type CreateCategoryType = {
+	name: string;
+	slug?: string;
+	parent?: number;
+	description?: string;
+};
+
 export type TagType = {
 	id: number;
+	name?: string;
+	slug?: string;
+};
+
+export type CreateTagType = {
 	name: string;
-	slug: string;
+	slug?: string;
 };
 
 export type ManufacturerType = {
@@ -43,6 +63,7 @@ export type ProductType = {
 	}>;
 	featuredImage?: string;
 	images?: string[];
+	tags?: TagType[];
 };
 
 export type UpdateProductType = Partial<ProductType> & {

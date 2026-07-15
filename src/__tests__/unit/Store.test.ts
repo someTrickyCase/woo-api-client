@@ -1,5 +1,12 @@
+import * as fs from "node:fs";
 import Store from "../../store";
 import Connection from "../../services/Connection";
+import { CreateAttributeType } from "../../types/types";
+
+jest.mock("node:fs", () => ({
+	existsSync: jest.fn(),
+	readFileSync: jest.fn(),
+}));
 
 jest.mock("../../services/Connection");
 
@@ -95,6 +102,57 @@ describe("Store", () => {
 		});
 	});
 
+	describe("createManufacturers", () => {
+		const attrs = [
+			{
+				id: 5,
+				slug: "pa_proizvoditel",
+				name: "Manufacturer",
+			},
+		];
+
+		it("should create manufacturer terms", async () => {
+			mockGet.mockResolvedValueOnce(attrs);
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 100 }],
+			});
+
+			const manufacturers = [
+				{
+					name: "Bosch",
+					slug: "bosch",
+				},
+			];
+
+			await store.createManufacturers(manufacturers);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/attributes/5/terms/batch",
+				JSON.stringify({
+					create: manufacturers,
+				}),
+			);
+		});
+
+		it("should return empty result for empty input", async () => {
+			mockGet.mockResolvedValueOnce(attrs);
+
+			const result = await store.createManufacturers([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
+		});
+
+		it("should throw if manufacturer attribute is missing", async () => {
+			mockGet.mockResolvedValueOnce([]);
+
+			await expect(
+				store.createManufacturers([{ name: "Bosch" } as any]),
+			).rejects.toThrow("Manufacturer attribute not found");
+		});
+	});
+
 	describe("getCategories", () => {
 		it("should call connection with correct endpoint", async () => {
 			const mockCategories = [{ id: 1, name: "Electronics" }];
@@ -109,6 +167,37 @@ describe("Store", () => {
 		});
 	});
 
+	describe("createCategories", () => {
+		it("should create categories", async () => {
+			const categories = [
+				{ name: "Electronics", slug: "electronics" },
+				{ name: "Phones", slug: "phones" },
+			];
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 1 }, { id: 2 }],
+			});
+
+			const result = await store.createCategories(categories);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/categories/batch",
+				JSON.stringify({
+					create: categories,
+				}),
+			);
+
+			expect(result.create).toHaveLength(2);
+		});
+
+		it("should return empty result when categories array is empty", async () => {
+			const result = await store.createCategories([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
+		});
+	});
+
 	describe("getTags", () => {
 		it("should get product tags", async () => {
 			const mockTags = [{ id: 1, name: "Electronics" }];
@@ -118,6 +207,35 @@ describe("Store", () => {
 
 			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products/tags");
 			expect(result).toEqual(mockTags);
+		});
+	});
+
+	describe("createTags", () => {
+		it("should create tags", async () => {
+			const tags = [
+				{ name: "New", slug: "new" },
+				{ name: "Sale", slug: "sale" },
+			];
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 1 }, { id: 2 }],
+			});
+
+			await store.createTags(tags);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/tags/batch",
+				JSON.stringify({
+					create: tags,
+				}),
+			);
+		});
+
+		it("should return empty result for empty input", async () => {
+			const result = await store.createTags([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
 		});
 	});
 
@@ -147,29 +265,60 @@ describe("Store", () => {
 		});
 	});
 
+	describe("createAttributes", () => {
+		it("should create attributes", async () => {
+			const attributes: CreateAttributeType[] = [
+				{
+					name: "Color",
+					slug: "color",
+					type: "select",
+					order_by: "menu_order",
+					has_archives: false,
+				},
+			];
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 10 }],
+			});
+
+			await store.createAttributes(attributes);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/attributes/batch",
+				JSON.stringify({
+					create: attributes,
+				}),
+			);
+		});
+
+		it("should return empty result when array is empty", async () => {
+			const result = await store.createAttributes([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
+		});
+	});
+
 	describe("uploadImages", () => {
 		it("should upload multiple images", async () => {
-			const mockImageResponse1 = { id: 123 };
-			const mockImageResponse2 = { id: 456 };
 			mockPost
-				.mockResolvedValueOnce(mockImageResponse1)
-				.mockResolvedValueOnce(mockImageResponse2);
+				.mockResolvedValueOnce({ id: 123 })
+				.mockResolvedValueOnce({ id: 456 });
 
-			const imagePaths = ["/path/to/image1.jpg", "/path/to/image2.jpg"];
+			(fs.existsSync as jest.Mock).mockReturnValue(true);
+			(fs.readFileSync as jest.Mock).mockReturnValue(Buffer.from("test"));
 
-			const fs = require("fs");
-			jest.spyOn(fs, "existsSync").mockReturnValue(true);
-			jest.spyOn(fs, "readFileSync").mockReturnValue(Buffer.from("test"));
-
-			const result = await store.uploadImages(imagePaths);
+			const result = await store.uploadImages([
+				"/path/to/image1.jpg",
+				"/path/to/image2.jpg",
+			]);
 
 			expect(mockPost).toHaveBeenCalledTimes(2);
 			expect(result).toEqual([{ id: 123 }, { id: 456 }]);
 		});
 
-		it("should throw error when image file not found", async () => {
-			const fs = require("fs");
-			jest.spyOn(fs, "existsSync").mockReturnValue(false);
+		it("should throw when image doesn't exist", async () => {
+			(fs.existsSync as jest.Mock).mockReturnValue(false);
 
 			await expect(
 				store.uploadImages(["/nonexistent/image.jpg"]),
@@ -579,6 +728,44 @@ describe("Store", () => {
 	});
 
 	describe("createProducts", () => {
+		it("should not upload featured image twice when it is also in gallery", async () => {
+			const uploadImagesMock = jest
+				.spyOn(store, "uploadImages")
+				.mockResolvedValueOnce([{ id: 1 }]);
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 100 }],
+			});
+
+			await store.createProducts([
+				{
+					name: "Test",
+					sku: "SKU",
+					price: 100,
+					featuredImage: "/featured.jpg",
+					images: ["/featured.jpg"],
+				},
+			]);
+
+			expect(uploadImagesMock).toHaveBeenCalledTimes(1);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/batch",
+				JSON.stringify({
+					create: [
+						{
+							name: "Test",
+							sku: "SKU",
+							regular_price: "100",
+							images: [{ id: 1 }],
+						},
+					],
+				}),
+			);
+
+			uploadImagesMock.mockRestore();
+		});
+
 		it("should create products with descriptions", async () => {
 			const productsData = [
 				{

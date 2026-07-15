@@ -61,6 +61,10 @@ export default async function mapProduct(
 		...(product.categories && {
 			categories: product.categories,
 		}),
+
+		...(product.tags && {
+			tags: product.tags,
+		}),
 	};
 
 	if (allImageIds.length > 0) {
