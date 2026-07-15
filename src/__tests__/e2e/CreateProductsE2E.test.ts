@@ -6,7 +6,11 @@ import { WooClient } from "../../index";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
 // Helper function with timeout
-const fetchWithTimeout = async (url: string, options: any = {}, timeout = 15000) => {
+const fetchWithTimeout = async (
+	url: string,
+	options: any = {},
+	timeout = 15000,
+) => {
 	const controller = new AbortController();
 	const id = setTimeout(() => controller.abort(), timeout);
 
@@ -57,12 +61,12 @@ describe("Create Products Integration Test", () => {
 								headers: {
 									Authorization:
 										"Basic " +
-										Buffer.from(`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`).toString(
-											"base64"
-										),
+										Buffer.from(
+											`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`,
+										).toString("base64"),
 								},
 							},
-							10000
+							10000,
 						);
 					} catch (error) {
 						console.log(`Failed to cleanup product ${product.id}:`, error);
@@ -110,10 +114,12 @@ describe("Create Products Integration Test", () => {
 					headers: {
 						Authorization:
 							"Basic " +
-							Buffer.from(`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`).toString("base64"),
+							Buffer.from(
+								`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`,
+							).toString("base64"),
 					},
 				},
-				10000
+				10000,
 			);
 
 			expect(response.ok).toBe(true);
@@ -161,9 +167,11 @@ describe("Create Products Integration Test", () => {
 				headers: {
 					Authorization:
 						"Basic " +
-						Buffer.from(`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`).toString("base64"),
+						Buffer.from(
+							`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`,
+						).toString("base64"),
 				},
-			}
+			},
 		);
 
 		const products = await response.json();
@@ -173,13 +181,18 @@ describe("Create Products Integration Test", () => {
 		expect(product.images[0].id).toBeDefined();
 		expect(product.images[1].id).toBeDefined();
 
-		await fetch(`${process.env.STORE_URL!}/wp-json/wc/v3/products/${product.id}?force=true`, {
-			method: "DELETE",
-			headers: {
-				Authorization:
-					"Basic " +
-					Buffer.from(`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`).toString("base64"),
+		await fetch(
+			`${process.env.STORE_URL!}/wp-json/wc/v3/products/${product.id}?force=true`,
+			{
+				method: "DELETE",
+				headers: {
+					Authorization:
+						"Basic " +
+						Buffer.from(
+							`${process.env.WC_KEY!}:${process.env.WC_SECRET!}`,
+						).toString("base64"),
+				},
 			},
-		});
+		);
 	});
 });

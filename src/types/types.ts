@@ -15,6 +15,12 @@ export type CategoryType = {
 	parent: CategoryType;
 };
 
+export type TagType = {
+	id: number;
+	name: string;
+	slug: string;
+};
+
 export type ManufacturerType = {
 	id: number;
 	name: string;
@@ -22,6 +28,7 @@ export type ManufacturerType = {
 };
 
 export type ProductType = {
+	id?: number;
 	name: string;
 	sku: string;
 	price: number;
@@ -36,6 +43,10 @@ export type ProductType = {
 	}>;
 	featuredImage?: string;
 	images?: string[];
+};
+
+export type UpdateProductType = Partial<ProductType> & {
+	id: number;
 };
 
 export type DestributedProductType = {

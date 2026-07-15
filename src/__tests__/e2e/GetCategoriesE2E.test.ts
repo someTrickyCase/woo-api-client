@@ -5,7 +5,10 @@ import { CategoryType } from "../../types/types";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
-async function fetchAllPages(baseUrl: string, authHeader: string): Promise<any[]> {
+async function fetchAllPages(
+	baseUrl: string,
+	authHeader: string,
+): Promise<any[]> {
 	let allResults: any[] = [];
 	let page = 1;
 	let totalPages = 1;
@@ -53,11 +56,12 @@ describe("get categories e2e", () => {
 		};
 		store = new Store(credentials);
 
-		const authHeader = "Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
+		const authHeader =
+			"Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
 
 		directFetchedCategories = await fetchAllPages(
 			`${store_url}/wp-json/wc/v3/products/categories`,
-			authHeader
+			authHeader,
 		);
 	});
 
@@ -66,7 +70,9 @@ describe("get categories e2e", () => {
 		expect(categories.length).toEqual(directFetchedCategories.length);
 
 		directFetchedCategories.forEach((expectedCategory) => {
-			const foundCategory = categories.find((cat: CategoryType) => cat.id === expectedCategory.id);
+			const foundCategory = categories.find(
+				(cat: CategoryType) => cat.id === expectedCategory.id,
+			);
 			expect(foundCategory).toBeDefined();
 			expect(foundCategory.name).toEqual(expectedCategory.name);
 			expect(foundCategory.slug).toEqual(expectedCategory.slug);

@@ -63,7 +63,9 @@ describe("Connection", () => {
 				text: async () => "Bad Request",
 			});
 
-			await expect(connection.post("/test", "{}")).rejects.toThrow("HTTP 400: Bad Request");
+			await expect(connection.post("/test", "{}")).rejects.toThrow(
+				"HTTP 400: Bad Request",
+			);
 
 			expect(fetch).toHaveBeenCalledTimes(1); // Only one attempt for 4xx
 		});
@@ -84,12 +86,15 @@ describe("Connection", () => {
 			const endpoint = "/products";
 			const result = await connection.get(endpoint);
 
-			expect(fetch).toHaveBeenCalledWith(`${mockStoreUrl}${endpoint}?page=1&per_page=100`, {
-				method: "GET",
-				headers: {
-					Authorization: "Basic dGVzdF9rZXk6dGVzdF9zZWNyZXQ=",
+			expect(fetch).toHaveBeenCalledWith(
+				`${mockStoreUrl}${endpoint}?page=1&per_page=100`,
+				{
+					method: "GET",
+					headers: {
+						Authorization: "Basic dGVzdF9rZXk6dGVzdF9zZWNyZXQ=",
+					},
 				},
-			});
+			);
 			expect(result).toEqual(mockResponse);
 		});
 	});

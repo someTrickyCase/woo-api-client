@@ -1,5 +1,5 @@
 import { WooClient } from "../../index";
-import Store from "../../store"; // We'll create this later
+import Store from "../../store";
 import { CredentialsType } from "../../types/types";
 
 describe("WooClient", () => {
