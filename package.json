@@ -15,7 +15,7 @@
 	"scripts": {
 		"dev": "npm run build:live",
 		"build": "tsc -p .",
-		"build:live": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+		"build:live": "tsx watch src/index.ts",
 		"test": "jest --silent",
 		"test:unit": "jest --testPathPatterns='src/__tests__/unit/.*\\.test\\.ts'",
 		"test:e2e": "jest --testPathPatterns='src/__tests__/e2e/.*\\.test\\.ts'",
@@ -54,7 +54,7 @@
 		"jest": "^29.7.0",
 		"nodemon": "^3.1.10",
 		"ts-jest": "^29.4.11",
-		"ts-node": "^10.9.2",
+		"tsx": "^4.23.1",
 		"typescript": "^5.8.3"
 	}
 }
