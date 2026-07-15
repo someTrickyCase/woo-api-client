@@ -1,5 +1,12 @@
+import * as fs from "node:fs";
 import Store from "../../store";
 import Connection from "../../services/Connection";
+import { CreateAttributeType } from "../../types/types";
+
+jest.mock("node:fs", () => ({
+	existsSync: jest.fn(),
+	readFileSync: jest.fn(),
+}));
 
 jest.mock("../../services/Connection");
 
@@ -25,7 +32,7 @@ describe("Store", () => {
 				({
 					get: mockGet,
 					post: mockPost,
-				} as any)
+				}) as any,
 		);
 
 		store = new Store(mockCredentials);
@@ -45,7 +52,9 @@ describe("Store", () => {
 		];
 
 		it("should return manufacturers from cache on subsequent calls", async () => {
-			mockGet.mockResolvedValueOnce(mockAttributes).mockResolvedValueOnce(mockManufacturers);
+			mockGet
+				.mockResolvedValueOnce(mockAttributes)
+				.mockResolvedValueOnce(mockManufacturers);
 
 			const firstCall = await store.getManufacturers();
 			const secondCall = await store.getManufacturers();
@@ -56,17 +65,25 @@ describe("Store", () => {
 		});
 
 		it("should throw error when manufacturer attribute not found", async () => {
-			mockGet.mockResolvedValueOnce([{ id: 1, name: "Color", slug: "pa_color" }]);
+			mockGet.mockResolvedValueOnce([
+				{ id: 1, name: "Color", slug: "pa_color" },
+			]);
 
-			await expect(store.getManufacturers()).rejects.toThrow("Manufacturer attribute not found");
+			await expect(store.getManufacturers()).rejects.toThrow(
+				"Manufacturer attribute not found",
+			);
 		});
 
 		it("should find manufacturer attribute by correct slug and call correct endpoint", async () => {
-			mockGet.mockResolvedValueOnce(mockAttributes).mockResolvedValueOnce(mockManufacturers);
+			mockGet
+				.mockResolvedValueOnce(mockAttributes)
+				.mockResolvedValueOnce(mockManufacturers);
 
 			const result = await store.getManufacturers();
 
-			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products/attributes/2/terms");
+			expect(mockGet).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/attributes/2/terms",
+			);
 			expect(result).toEqual(mockManufacturers);
 		});
 
@@ -85,6 +102,57 @@ describe("Store", () => {
 		});
 	});
 
+	describe("createManufacturers", () => {
+		const attrs = [
+			{
+				id: 5,
+				slug: "pa_proizvoditel",
+				name: "Manufacturer",
+			},
+		];
+
+		it("should create manufacturer terms", async () => {
+			mockGet.mockResolvedValueOnce(attrs);
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 100 }],
+			});
+
+			const manufacturers = [
+				{
+					name: "Bosch",
+					slug: "bosch",
+				},
+			];
+
+			await store.createManufacturers(manufacturers);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/attributes/5/terms/batch",
+				JSON.stringify({
+					create: manufacturers,
+				}),
+			);
+		});
+
+		it("should return empty result for empty input", async () => {
+			mockGet.mockResolvedValueOnce(attrs);
+
+			const result = await store.createManufacturers([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
+		});
+
+		it("should throw if manufacturer attribute is missing", async () => {
+			mockGet.mockResolvedValueOnce([]);
+
+			await expect(
+				store.createManufacturers([{ name: "Bosch" } as any]),
+			).rejects.toThrow("Manufacturer attribute not found");
+		});
+	});
+
 	describe("getCategories", () => {
 		it("should call connection with correct endpoint", async () => {
 			const mockCategories = [{ id: 1, name: "Electronics" }];
@@ -92,8 +160,82 @@ describe("Store", () => {
 
 			const result = await store.getCategories();
 
-			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products/categories");
+			expect(mockGet).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/categories",
+			);
 			expect(result).toEqual(mockCategories);
+		});
+	});
+
+	describe("createCategories", () => {
+		it("should create categories", async () => {
+			const categories = [
+				{ name: "Electronics", slug: "electronics" },
+				{ name: "Phones", slug: "phones" },
+			];
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 1 }, { id: 2 }],
+			});
+
+			const result = await store.createCategories(categories);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/categories/batch",
+				JSON.stringify({
+					create: categories,
+				}),
+			);
+
+			expect(result.create).toHaveLength(2);
+		});
+
+		it("should return empty result when categories array is empty", async () => {
+			const result = await store.createCategories([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
+		});
+	});
+
+	describe("getTags", () => {
+		it("should get product tags", async () => {
+			const mockTags = [{ id: 1, name: "Electronics" }];
+			mockGet.mockResolvedValueOnce(mockTags);
+
+			const result = await store.getTags();
+
+			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products/tags");
+			expect(result).toEqual(mockTags);
+		});
+	});
+
+	describe("createTags", () => {
+		it("should create tags", async () => {
+			const tags = [
+				{ name: "New", slug: "new" },
+				{ name: "Sale", slug: "sale" },
+			];
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 1 }, { id: 2 }],
+			});
+
+			await store.createTags(tags);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/tags/batch",
+				JSON.stringify({
+					create: tags,
+				}),
+			);
+		});
+
+		it("should return empty result for empty input", async () => {
+			const result = await store.createTags([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
 		});
 	});
 
@@ -116,36 +258,71 @@ describe("Store", () => {
 
 			const result = await store.getAttributes();
 
-			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products/attributes/");
+			expect(mockGet).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/attributes/",
+			);
 			expect(result).toEqual(mockAttributes);
+		});
+	});
+
+	describe("createAttributes", () => {
+		it("should create attributes", async () => {
+			const attributes: CreateAttributeType[] = [
+				{
+					name: "Color",
+					slug: "color",
+					type: "select",
+					order_by: "menu_order",
+					has_archives: false,
+				},
+			];
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 10 }],
+			});
+
+			await store.createAttributes(attributes);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/attributes/batch",
+				JSON.stringify({
+					create: attributes,
+				}),
+			);
+		});
+
+		it("should return empty result when array is empty", async () => {
+			const result = await store.createAttributes([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ create: [] });
 		});
 	});
 
 	describe("uploadImages", () => {
 		it("should upload multiple images", async () => {
-			const mockImageResponse1 = { id: 123 };
-			const mockImageResponse2 = { id: 456 };
-			mockPost.mockResolvedValueOnce(mockImageResponse1).mockResolvedValueOnce(mockImageResponse2);
+			mockPost
+				.mockResolvedValueOnce({ id: 123 })
+				.mockResolvedValueOnce({ id: 456 });
 
-			const imagePaths = ["/path/to/image1.jpg", "/path/to/image2.jpg"];
+			(fs.existsSync as jest.Mock).mockReturnValue(true);
+			(fs.readFileSync as jest.Mock).mockReturnValue(Buffer.from("test"));
 
-			const fs = require("fs");
-			jest.spyOn(fs, "existsSync").mockReturnValue(true);
-			jest.spyOn(fs, "readFileSync").mockReturnValue(Buffer.from("test"));
-
-			const result = await store.uploadImages(imagePaths);
+			const result = await store.uploadImages([
+				"/path/to/image1.jpg",
+				"/path/to/image2.jpg",
+			]);
 
 			expect(mockPost).toHaveBeenCalledTimes(2);
 			expect(result).toEqual([{ id: 123 }, { id: 456 }]);
 		});
 
-		it("should throw error when image file not found", async () => {
-			const fs = require("fs");
-			jest.spyOn(fs, "existsSync").mockReturnValue(false);
+		it("should throw when image doesn't exist", async () => {
+			(fs.existsSync as jest.Mock).mockReturnValue(false);
 
-			await expect(store.uploadImages(["/nonexistent/image.jpg"])).rejects.toThrow(
-				"File not found: /nonexistent/image.jpg"
-			);
+			await expect(
+				store.uploadImages(["/nonexistent/image.jpg"]),
+			).rejects.toThrow("File not found: /nonexistent/image.jpg");
 		});
 	});
 
@@ -166,7 +343,7 @@ describe("Store", () => {
 					({
 						get: mockGet,
 						post: jest.fn(),
-					} as any)
+					}) as any,
 			);
 
 			store = new Store(mockCredentials);
@@ -186,7 +363,9 @@ describe("Store", () => {
 			const result = await store.getProductIdsBySkus(skus);
 
 			// Single request with comma-separated SKUs
-			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products?sku=SKU001,SKU002,SKU003");
+			expect(mockGet).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products?sku=SKU001,SKU002,SKU003",
+			);
 			expect(result).toEqual([
 				{ sku: "SKU001", id: 101 },
 				{ sku: "SKU002", id: 102 },
@@ -223,7 +402,7 @@ describe("Store", () => {
 			// If we have more SKUs than API limit, might need multiple requests
 			const manySkus = Array.from(
 				{ length: 150 },
-				(_, i) => `SKU${String(i + 1).padStart(3, "0")}`
+				(_, i) => `SKU${String(i + 1).padStart(3, "0")}`,
 			);
 
 			const mockProducts = [{ id: 1, sku: "SKU001", name: "Product 1" }];
@@ -233,7 +412,9 @@ describe("Store", () => {
 			const result = await store.getProductIdsBySkus(manySkus);
 
 			// Should make request with all SKUs comma-separated
-			expect(mockGet).toHaveBeenCalledWith(expect.stringContaining("/wp-json/wc/v3/products?sku="));
+			expect(mockGet).toHaveBeenCalledWith(
+				expect.stringContaining("/wp-json/wc/v3/products?sku="),
+			);
 		});
 
 		it("should URL encode SKUs with special characters", async () => {
@@ -244,7 +425,9 @@ describe("Store", () => {
 			const skus = ["SKU/001", "SKU 002"];
 			await store.getProductIdsBySkus(skus);
 
-			expect(mockGet).toHaveBeenCalledWith("/wp-json/wc/v3/products?sku=SKU%2F001,SKU%20002");
+			expect(mockGet).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products?sku=SKU%2F001,SKU%20002",
+			);
 		});
 	});
 
@@ -283,7 +466,7 @@ describe("Store", () => {
 						{ id: 102, regular_price: "2000" },
 						{ id: 103, regular_price: "3000" },
 					],
-				})
+				}),
 			);
 
 			expect(result).toEqual(mockBatchResponse);
@@ -312,12 +495,277 @@ describe("Store", () => {
 						{ id: 101, regular_price: "1000" },
 						// SKU002 skipped
 					],
-				})
+				}),
 			);
 		});
 	});
 
+	describe("updateProducts", () => {
+		it("should update products with descriptions", async () => {
+			const productsData = [
+				{
+					id: 101,
+					name: "Updated Product",
+					price: 2500,
+					description: "Updated description",
+					shortDescription: "Updated short description",
+				},
+			];
+
+			const mockBatchResponse = {
+				update: [{ id: 101, name: "Updated Product" }],
+			};
+
+			mockPost.mockResolvedValueOnce(mockBatchResponse);
+
+			const result = await store.updateProducts(productsData);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/batch",
+				JSON.stringify({
+					update: [
+						{
+							id: 101,
+							name: "Updated Product",
+							regular_price: "2500",
+							description: "Updated description",
+							short_description: "Updated short description",
+						},
+					],
+				}),
+			);
+
+			expect(result).toEqual(mockBatchResponse);
+		});
+
+		it("should split updates into batches", async () => {
+			const productsData = Array.from({ length: 75 }, (_, i) => ({
+				id: i + 1,
+				name: `Updated ${i + 1}`,
+			}));
+
+			mockPost
+				.mockResolvedValueOnce({
+					update: Array.from({ length: 50 }, (_, i) => ({ id: i + 1 })),
+				})
+				.mockResolvedValueOnce({
+					update: Array.from({ length: 25 }, (_, i) => ({ id: i + 51 })),
+				});
+
+			const result = await store.updateProducts(productsData);
+
+			expect(mockPost).toHaveBeenCalledTimes(2);
+
+			expect(mockPost).toHaveBeenNthCalledWith(
+				1,
+				"/wp-json/wc/v3/products/batch",
+				expect.stringContaining('"update":'),
+			);
+
+			expect(mockPost).toHaveBeenNthCalledWith(
+				2,
+				"/wp-json/wc/v3/products/batch",
+				expect.stringContaining('"update":'),
+			);
+
+			expect(result.update).toHaveLength(75);
+		});
+
+		it("should return empty result for empty input", async () => {
+			const result = await store.updateProducts([]);
+
+			expect(mockPost).not.toHaveBeenCalled();
+			expect(result).toEqual({ update: [] });
+		});
+
+		it("should handle batch failures gracefully", async () => {
+			const productsData = Array.from({ length: 60 }, (_, i) => ({
+				id: i + 1,
+				name: `Updated ${i + 1}`,
+			}));
+
+			mockPost
+				.mockResolvedValueOnce({
+					update: Array.from({ length: 50 }, (_, i) => ({ id: i + 1 })),
+				})
+				.mockRejectedValueOnce(new Error("API Error"));
+
+			const result = await store.updateProducts(productsData);
+
+			expect(mockPost).toHaveBeenCalledTimes(2);
+			expect(result.update).toHaveLength(50);
+			expect(result.errors).toBeDefined();
+		});
+
+		it("should update only provided fields", async () => {
+			const productsData = [
+				{
+					id: 101,
+					price: 3999,
+				},
+			];
+
+			mockPost.mockResolvedValueOnce({
+				update: [{ id: 101 }],
+			});
+
+			await store.updateProducts(productsData);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/batch",
+				JSON.stringify({
+					update: [
+						{
+							id: 101,
+							regular_price: "3999",
+						},
+					],
+				}),
+			);
+		});
+
+		it("should update categories and attributes", async () => {
+			const productsData = [
+				{
+					id: 101,
+					categories: [{ id: 5 }],
+					attributes: [
+						{
+							id: 7,
+							options: ["ARB"],
+						},
+					],
+				},
+			];
+
+			mockPost.mockResolvedValueOnce({
+				update: [{ id: 101 }],
+			});
+
+			await store.updateProducts(productsData);
+
+			const payload = JSON.parse(mockPost.mock.calls[0][1]);
+
+			expect(payload.update[0]).toEqual({
+				id: 101,
+				categories: [{ id: 5 }],
+				attributes: [
+					{
+						id: 7,
+						options: ["ARB"],
+					},
+				],
+			});
+		});
+
+		it("should upload featured and gallery images during update", async () => {
+			const uploadImagesMock = jest
+				.spyOn(store, "uploadImages")
+				.mockResolvedValueOnce([{ id: 201 }])
+				.mockResolvedValueOnce([{ id: 202 }, { id: 203 }]);
+
+			mockPost.mockResolvedValueOnce({
+				update: [{ id: 101 }],
+			});
+
+			await store.updateProducts([
+				{
+					id: 101,
+					featuredImage: "/featured.jpg",
+					images: ["/gallery1.jpg", "/gallery2.jpg"],
+				},
+			]);
+
+			expect(uploadImagesMock).toHaveBeenCalledTimes(2);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/batch",
+				JSON.stringify({
+					update: [
+						{
+							id: 101,
+							images: [{ id: 201 }, { id: 202 }, { id: 203 }],
+						},
+					],
+				}),
+			);
+
+			uploadImagesMock.mockRestore();
+		});
+
+		it("should continue update when image upload fails", async () => {
+			const uploadImagesMock = jest
+				.spyOn(store, "uploadImages")
+				.mockRejectedValueOnce(new Error("Upload failed"))
+				.mockResolvedValueOnce([{ id: 501 }]);
+
+			mockPost.mockResolvedValueOnce({
+				update: [{ id: 101 }],
+			});
+
+			await store.updateProducts([
+				{
+					id: 101,
+					featuredImage: "/featured.jpg",
+					images: ["/gallery.jpg"],
+				},
+			]);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/batch",
+				JSON.stringify({
+					update: [
+						{
+							id: 101,
+							images: [{ id: 501 }],
+						},
+					],
+				}),
+			);
+
+			uploadImagesMock.mockRestore();
+		});
+	});
+
 	describe("createProducts", () => {
+		it("should not upload featured image twice when it is also in gallery", async () => {
+			const uploadImagesMock = jest
+				.spyOn(store, "uploadImages")
+				.mockResolvedValueOnce([{ id: 1 }]);
+
+			mockPost.mockResolvedValueOnce({
+				create: [{ id: 100 }],
+			});
+
+			await store.createProducts([
+				{
+					name: "Test",
+					sku: "SKU",
+					price: 100,
+					featuredImage: "/featured.jpg",
+					images: ["/featured.jpg"],
+				},
+			]);
+
+			expect(uploadImagesMock).toHaveBeenCalledTimes(1);
+
+			expect(mockPost).toHaveBeenCalledWith(
+				"/wp-json/wc/v3/products/batch",
+				JSON.stringify({
+					create: [
+						{
+							name: "Test",
+							sku: "SKU",
+							regular_price: "100",
+							images: [{ id: 1 }],
+						},
+					],
+				}),
+			);
+
+			uploadImagesMock.mockRestore();
+		});
+
 		it("should create products with descriptions", async () => {
 			const productsData = [
 				{
@@ -349,7 +797,7 @@ describe("Store", () => {
 							short_description: "Short description",
 						},
 					],
-				})
+				}),
 			);
 			expect(result).toEqual(mockBatchResponse);
 		});
@@ -362,14 +810,22 @@ describe("Store", () => {
 			}));
 
 			const mockBatchResponse1 = {
-				create: Array.from({ length: 50 }, (_, i) => ({ id: i + 1, name: `Product ${i + 1}` })),
+				create: Array.from({ length: 50 }, (_, i) => ({
+					id: i + 1,
+					name: `Product ${i + 1}`,
+				})),
 			};
 
 			const mockBatchResponse2 = {
-				create: Array.from({ length: 25 }, (_, i) => ({ id: i + 51, name: `Product ${i + 51}` })),
+				create: Array.from({ length: 25 }, (_, i) => ({
+					id: i + 51,
+					name: `Product ${i + 51}`,
+				})),
 			};
 
-			mockPost.mockResolvedValueOnce(mockBatchResponse1).mockResolvedValueOnce(mockBatchResponse2);
+			mockPost
+				.mockResolvedValueOnce(mockBatchResponse1)
+				.mockResolvedValueOnce(mockBatchResponse2);
 
 			const result = await store.createProducts(productsData);
 
@@ -378,13 +834,13 @@ describe("Store", () => {
 			expect(mockPost).toHaveBeenNthCalledWith(
 				1,
 				"/wp-json/wc/v3/products/batch",
-				expect.stringContaining('"create":')
+				expect.stringContaining('"create":'),
 			);
 
 			expect(mockPost).toHaveBeenNthCalledWith(
 				2,
 				"/wp-json/wc/v3/products/batch",
-				expect.stringContaining('"create":')
+				expect.stringContaining('"create":'),
 			);
 
 			expect(result.create).toHaveLength(75);
@@ -401,11 +857,16 @@ describe("Store", () => {
 			}));
 
 			const mockBatchResponse1 = {
-				create: Array.from({ length: 50 }, (_, i) => ({ id: i + 1, name: `Product ${i + 1}` })),
+				create: Array.from({ length: 50 }, (_, i) => ({
+					id: i + 1,
+					name: `Product ${i + 1}`,
+				})),
 			};
 
 			const batchError = new Error("API Error");
-			mockPost.mockResolvedValueOnce(mockBatchResponse1).mockRejectedValueOnce(batchError);
+			mockPost
+				.mockResolvedValueOnce(mockBatchResponse1)
+				.mockRejectedValueOnce(batchError);
 
 			const result = await store.createProducts(productsData);
 
@@ -462,7 +923,7 @@ describe("Store", () => {
 							// No description
 						},
 					],
-				})
+				}),
 			);
 		});
 
@@ -478,7 +939,9 @@ describe("Store", () => {
 			];
 
 			const mockBatchResponse = {
-				create: [{ id: 101, name: "Product with Featured", sku: "SKU-FEATURED" }],
+				create: [
+					{ id: 101, name: "Product with Featured", sku: "SKU-FEATURED" },
+				],
 			};
 
 			// Mock uploadImages method directly
@@ -506,12 +969,14 @@ describe("Store", () => {
 							],
 						},
 					],
-				})
+				}),
 			);
 
 			// Verify uploadImages was called correctly
 			expect(uploadImagesMock).toHaveBeenCalledTimes(2);
-			expect(uploadImagesMock).toHaveBeenNthCalledWith(1, ["/path/to/featured.jpg"]);
+			expect(uploadImagesMock).toHaveBeenNthCalledWith(1, [
+				"/path/to/featured.jpg",
+			]);
 			expect(uploadImagesMock).toHaveBeenNthCalledWith(2, [
 				"/path/to/gallery1.jpg",
 				"/path/to/gallery2.jpg",
@@ -532,7 +997,9 @@ describe("Store", () => {
 			];
 
 			const mockBatchResponse = {
-				create: [{ id: 101, name: "Product Featured Only", sku: "SKU-FEATURED-ONLY" }],
+				create: [
+					{ id: 101, name: "Product Featured Only", sku: "SKU-FEATURED-ONLY" },
+				],
 			};
 
 			// Mock uploadImages for featured image only
@@ -557,7 +1024,7 @@ describe("Store", () => {
 							],
 						},
 					],
-				})
+				}),
 			);
 
 			expect(uploadImagesMock).toHaveBeenCalledWith(["/path/to/featured.jpg"]);
@@ -576,7 +1043,9 @@ describe("Store", () => {
 			];
 
 			const mockBatchResponse = {
-				create: [{ id: 101, name: "Product Gallery Only", sku: "SKU-GALLERY-ONLY" }],
+				create: [
+					{ id: 101, name: "Product Gallery Only", sku: "SKU-GALLERY-ONLY" },
+				],
 			};
 
 			// Mock uploadImages for gallery images
@@ -602,7 +1071,7 @@ describe("Store", () => {
 							],
 						},
 					],
-				})
+				}),
 			);
 
 			expect(uploadImagesMock).toHaveBeenCalledWith([
@@ -624,7 +1093,13 @@ describe("Store", () => {
 			];
 
 			const mockBatchResponse = {
-				create: [{ id: 101, name: "Product with Failed Images", sku: "SKU-FAILED-IMAGES" }],
+				create: [
+					{
+						id: 101,
+						name: "Product with Failed Images",
+						sku: "SKU-FAILED-IMAGES",
+					},
+				],
 			};
 
 			// Mock uploadImages to fail for featured but work for gallery
@@ -651,7 +1126,7 @@ describe("Store", () => {
 							],
 						},
 					],
-				})
+				}),
 			);
 
 			uploadImagesMock.mockRestore();

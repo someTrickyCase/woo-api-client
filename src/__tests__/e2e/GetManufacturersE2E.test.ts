@@ -4,7 +4,10 @@ import Store from "../../store";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
-async function fetchAllPages(baseUrl: string, authHeader: string): Promise<any[]> {
+async function fetchAllPages(
+	baseUrl: string,
+	authHeader: string,
+): Promise<any[]> {
 	let allResults: any[] = [];
 	let page = 1;
 	let totalPages = 1;
@@ -53,14 +56,17 @@ describe("Store.getManufacturers (e2e)", () => {
 		};
 		store = new Store(credentials);
 
-		const authHeader = "Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
+		const authHeader =
+			"Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
 
 		const attributes = await fetchAllPages(
 			`${store_url}/wp-json/wc/v3/products/attributes`,
-			authHeader
+			authHeader,
 		);
 
-		const manufacturerAttribute = attributes.find((attr: any) => attr.slug === "pa_proizvoditel");
+		const manufacturerAttribute = attributes.find(
+			(attr: any) => attr.slug === "pa_proizvoditel",
+		);
 
 		if (!manufacturerAttribute) {
 			throw new Error("Manufacturer attribute not found in direct fetch");
@@ -68,7 +74,7 @@ describe("Store.getManufacturers (e2e)", () => {
 
 		directFetchedManufacturers = await fetchAllPages(
 			`${store_url}/wp-json/wc/v3/products/attributes/${manufacturerAttribute.id}/terms`,
-			authHeader
+			authHeader,
 		);
 	});
 

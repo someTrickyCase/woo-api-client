@@ -5,7 +5,10 @@ import { ManufacturerType } from "../../types/types";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
-async function fetchAllPages(baseUrl: string, authHeader: string): Promise<any[]> {
+async function fetchAllPages(
+	baseUrl: string,
+	authHeader: string,
+): Promise<any[]> {
 	let allResults: any[] = [];
 	let page = 1;
 	let totalPages = 1;
@@ -53,11 +56,12 @@ describe("get attributes e2e", () => {
 		};
 		store = new Store(credentials);
 
-		const authHeader = "Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
+		const authHeader =
+			"Basic " + Buffer.from(`${wc_key}:${wc_secret}`).toString("base64");
 
 		directFetchedAttributes = await fetchAllPages(
 			`${store_url}/wp-json/wc/v3/products/attributes/`,
-			authHeader
+			authHeader,
 		);
 	});
 
