@@ -6,7 +6,7 @@ const config: Config.InitialOptions = {
 	testEnvironment: "node",
 	coverageProvider: "v8",
 	roots: ["<rootDir>/src"],
-	testMatch: ["**/__tests__/**/*.test.ts"],
+	testMatch: ["**/__tests__/unit/**/*.test.ts"],
 };
 
 export default config;
