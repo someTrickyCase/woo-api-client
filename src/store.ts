@@ -75,7 +75,7 @@ export default class Store {
 
 		const attributes = await this.getAttributes();
 		const manufacturerAttribute = attributes.find(
-			(attr: CategoryType) => attr.slug === "pa_proizvoditel"
+			(attr: CategoryType) => attr.slug === "pa_proizvoditel",
 		);
 
 		if (!manufacturerAttribute) {
@@ -88,7 +88,7 @@ export default class Store {
 		});
 
 		const data = await connection.get(
-			`/wp-json/wc/v3/products/attributes/${manufacturerAttribute.id}/terms`
+			`/wp-json/wc/v3/products/attributes/${manufacturerAttribute.id}/terms`,
 		);
 
 		this.manufacturersCache = data;
@@ -96,7 +96,9 @@ export default class Store {
 		return this.manufacturersCache;
 	}
 
-	async getProductIdsBySkus(skus: string[]): Promise<Array<{ sku: string; id: number | null }>> {
+	async getProductIdsBySkus(
+		skus: string[],
+	): Promise<Array<{ sku: string; id: number | null }>> {
 		if (skus.length === 0) return [];
 
 		const connection = new Connection(this.credentials.store_url, {
@@ -105,7 +107,9 @@ export default class Store {
 		});
 
 		const encodedSkus = skus.map((sku) => encodeURIComponent(sku)).join(",");
-		const products = await connection.get(`/wp-json/wc/v3/products?sku=${encodedSkus}`);
+		const products = await connection.get(
+			`/wp-json/wc/v3/products?sku=${encodedSkus}`,
+		);
 
 		const foundMap = new Map();
 		products.forEach((product: any) => {
@@ -127,7 +131,10 @@ export default class Store {
 		let idPricePairs: { id: number; regular_price: string }[] = [];
 		idSkuPairs.forEach((pair) => {
 			if (!pair.id) return;
-			idPricePairs.push({ id: pair.id, regular_price: priceUpdates[pair.sku].toString() });
+			idPricePairs.push({
+				id: pair.id,
+				regular_price: priceUpdates[pair.sku].toString(),
+			});
 		});
 
 		const connection = new Connection(this.credentials.store_url, {
@@ -139,7 +146,7 @@ export default class Store {
 			"/wp-json/wc/v3/products/batch",
 			JSON.stringify({
 				update: idPricePairs,
-			})
+			}),
 		);
 	}
 
@@ -161,7 +168,7 @@ export default class Store {
 			const batch = batchedData[batchIndex];
 
 			console.log(
-				`Processing batch ${batchIndex + 1}/${batchedData.length} (${batch.length} products)...`
+				`Processing batch ${batchIndex + 1}/${batchedData.length} (${batch.length} products)...`,
 			);
 
 			const connection = new Connection(this.credentials.store_url, {
@@ -176,7 +183,9 @@ export default class Store {
 
 					if (product.featuredImage) {
 						try {
-							const featuredImages = await this.uploadImages([product.featuredImage]);
+							const featuredImages = await this.uploadImages([
+								product.featuredImage,
+							]);
 							if (featuredImages.length > 0) {
 								featuredImageId = featuredImages[0].id;
 								allImageIds.push(featuredImages[0]);
@@ -187,13 +196,16 @@ export default class Store {
 					}
 
 					if (product.images && product.images.length > 0) {
-						const galleryImagesToUpload = product.featuredImage
-							? product.images.filter((img) => img !== product.featuredImage)
-							: product.images;
+						const galleryImagesToUpload =
+							product.featuredImage ?
+								product.images.filter((img) => img !== product.featuredImage)
+							:	product.images;
 
 						if (galleryImagesToUpload.length > 0) {
 							try {
-								const galleryImages = await this.uploadImages(galleryImagesToUpload);
+								const galleryImages = await this.uploadImages(
+									galleryImagesToUpload,
+								);
 								allImageIds = [...allImageIds, ...galleryImages];
 							} catch (error) {
 								console.error("Failed to upload gallery images:", error);
@@ -206,7 +218,9 @@ export default class Store {
 						sku: product.sku,
 						regular_price: product.price.toString(),
 						...(product.description && { description: product.description }),
-						...(product.shortDescription && { short_description: product.shortDescription }),
+						...(product.shortDescription && {
+							short_description: product.shortDescription,
+						}),
 						...(product.attributes && { attributes: product.attributes }),
 						...(product.categories && { categories: product.categories }),
 					};
@@ -223,7 +237,7 @@ export default class Store {
 					}
 
 					return productData;
-				})
+				}),
 			);
 
 			try {
@@ -231,7 +245,7 @@ export default class Store {
 					"/wp-json/wc/v3/products/batch",
 					JSON.stringify({
 						create: createData,
-					})
+					}),
 				);
 
 				allResults.push(batchResult);
@@ -254,7 +268,9 @@ export default class Store {
 		return {
 			create: allResults.flatMap((result) => result.create || []),
 			...(allResults.some((result) => result.error) && {
-				errors: allResults.filter((result) => result.error).map((result) => result.error),
+				errors: allResults
+					.filter((result) => result.error)
+					.map((result) => result.error),
 			}),
 		};
 	}
