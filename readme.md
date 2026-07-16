@@ -455,10 +455,6 @@ MIT
 
 ---
 
-# Links
-
-- 🐛 Issues
-- 💬 Discussions
 - 📬 Telegram: https://t.me/snowinboots
 
 ---
