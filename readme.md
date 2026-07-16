@@ -1,21 +1,27 @@
 # WooCommerce API Client
 
-A modern TypeScript client for the WooCommerce REST API with first-class support for multi-store applications, product synchronization, media uploads and batch operations.
+A modern TypeScript client for the WooCommerce REST API focused on **catalog synchronization**, **batch operations**, and **automation**.
 
-Built for automation tools, ERP integrations and AI-powered product pipelines.
+Unlike generic REST wrappers, this library provides high-level methods for synchronizing products, categories, attributes, tags and media with WooCommerce.
+
+Perfect for ERP integrations, supplier feeds, AI-powered product pipelines and custom import tools.
 
 ---
 
 ## Features
 
 - 🏪 Multi-store support
-- 📦 Batch create and update operations
-- 🖼️ Automatic image uploads to the WordPress Media Library
-- 🛍️ Complete product management
-- 🏷️ Categories, attributes and manufacturer helpers
-- 🔄 Automatic retry mechanism for transient failures
-- 🧩 Fully typed TypeScript API
-- 🧪 High test coverage with unit and integration tests
+- 📦 Batch product creation
+- ✏️ Batch product updates
+- 💰 Batch price updates
+- 🖼️ Automatic image uploads
+- 📂 Category synchronization
+- 🏷️ Tag synchronization
+- 🎨 Attribute & term synchronization
+- 📋 Retrieve complete WooCommerce catalog
+- 🔄 Automatic retry mechanism
+- 🛡️ Fully typed TypeScript API
+- 🧪 High test coverage
 
 ---
 
@@ -35,9 +41,11 @@ import { WooClient } from "@sometrickycase/woo-api-client";
 const client = new WooClient();
 
 client.addStore("main", {
-	store_url: "https://example.com",
+	store_url: "https://your-store.com",
+
 	wc_key: process.env.WC_KEY!,
 	wc_secret: process.env.WC_SECRET!,
+
 	wp_username: process.env.WP_USERNAME!,
 	wp_app_pass: process.env.WP_APP_PASSWORD!,
 });
@@ -47,51 +55,58 @@ const store = client.selectStore("main");
 
 ---
 
-# Multi Store Support
+# Multi-Store Support
+
+Register as many WooCommerce stores as needed.
 
 ```ts
 const client = new WooClient();
 
-client.addStore("production", {...});
-client.addStore("staging", {...});
-client.addStore("development", {...});
+client.addStore("production", credentials);
+client.addStore("staging", credentials);
+client.addStore("development", credentials);
 
 const production = client.selectStore("production");
-const staging = client.selectStore("staging");
 
-const stores = client.selectAllStores();
+const allStores = client.selectAllStores();
 ```
 
 Remove stores when no longer needed.
 
 ```ts
 client.removeStore("development");
+
 client.removeAllStores();
 ```
 
 ---
 
-# Creating Products
+# Product Creation
+
+Create one or many products in a single request.
 
 ```ts
 await store.createProducts([
 	{
 		name: "Samsung Galaxy S24",
+
 		sku: "SM-S921",
+
 		price: 999,
 
 		description: "<p>Product description</p>",
+
 		shortDescription: "Short description",
 
 		featuredImage: "./images/main.jpg",
 
 		images: [
-			"./images/1.jpg",
-			"./images/2.jpg",
+			"./images/back.jpg",
+			"./images/side.jpg",
 		],
 
 		categories: [
-			{ id: 15 }
+			{ id: 15 },
 		],
 
 		attributes: [
@@ -108,20 +123,22 @@ await store.createProducts([
 ]);
 ```
 
-Images are uploaded automatically before product creation.
+Images are automatically uploaded to the WordPress Media Library before creating the product.
 
 ---
 
-# Updating Products
+# Product Updates
+
+Update only the fields you want to change.
 
 ```ts
 await store.updateProducts([
 	{
-		id: 152,
+		id: 125,
 
 		price: 899,
 
-		shortDescription: "Now even cheaper!",
+		shortDescription: "Limited time offer!",
 
 		images: [
 			"./updated-image.jpg",
@@ -130,16 +147,30 @@ await store.updateProducts([
 ]);
 ```
 
-Only supplied fields are updated.
+---
+
+# Update Prices
+
+Update prices for multiple products using SKUs.
+
+```ts
+await store.updatePrices({
+	"SKU-001": 1999,
+	"SKU-002": 2499,
+	"SKU-003": 2999,
+});
+```
 
 ---
 
 # Upload Images
 
+Upload images directly to the WordPress Media Library.
+
 ```ts
 const uploaded = await store.uploadImages([
-	"./images/1.jpg",
-	"./images/2.png",
+	"./images/front.jpg",
+	"./images/back.jpg",
 ]);
 
 console.log(uploaded);
@@ -152,27 +183,84 @@ console.log(uploaded);
 
 ---
 
-# Update Prices
+# Upload Categories
+
+Create categories that do not already exist.
 
 ```ts
-await store.updatePrices({
-	"SKU-001": 1499,
-	"SKU-002": 1899,
-	"SKU-003": 999,
-});
+await store.uploadCategories([
+	"Phones",
+	"Accessories",
+	"Chargers",
+]);
+```
+
+---
+
+# Upload Tags
+
+```ts
+await store.uploadTags([
+	"Samsung",
+	"Android",
+	"Wireless Charging",
+]);
+```
+
+---
+
+# Upload Attributes
+
+Create attributes and their terms.
+
+```ts
+await store.uploadAttributes([
+	{
+		name: "Brand",
+
+		values: [
+			"Samsung",
+			"Apple",
+			"Google",
+		],
+	},
+	{
+		name: "Color",
+
+		values: [
+			"Black",
+			"White",
+			"Blue",
+		],
+	},
+]);
 ```
 
 ---
 
 # Retrieve Products
 
-```ts
-const allProducts = await store.getAllProducts();
+Retrieve the entire WooCommerce catalog.
 
+```ts
+const products = await store.getAllProducts();
+```
+
+Resolve WooCommerce IDs from SKUs.
+
+```ts
 const ids = await store.getProductIdsBySkus([
 	"SKU-001",
 	"SKU-002",
+	"SKU-003",
 ]);
+
+// [
+//   {
+//     sku: "...",
+//     id: ...
+//   }
+// ]
 ```
 
 ---
@@ -195,15 +283,43 @@ const attributes = await store.getAttributes();
 
 # Manufacturers
 
+Retrieve manufacturer attribute values.
+
 ```ts
 const manufacturers = await store.getManufacturers();
 ```
 
 ---
 
+# Typical Synchronization Flow
+
+```text
+Supplier Feed
+      │
+      ▼
+Normalize Data
+      │
+      ▼
+uploadCategories()
+      │
+      ▼
+uploadAttributes()
+      │
+      ▼
+uploadTags()
+      │
+      ▼
+createProducts()
+      │
+      ▼
+updatePrices()
+```
+
+---
+
 # Error Handling
 
-Every request automatically retries transient failures.
+All requests automatically retry transient failures.
 
 ```ts
 try {
@@ -213,21 +329,21 @@ try {
 }
 ```
 
-Unexpected failures throw exceptions after all retry attempts have been exhausted.
+If all retry attempts fail, the request throws an exception.
 
 ---
 
-# API Overview
+# API Reference
 
 ## WooClient
 
 | Method | Description |
 |---------|-------------|
-| addStore() | Register a WooCommerce store |
-| selectStore() | Get a Store instance |
-| selectAllStores() | Get all registered stores |
-| removeStore() | Remove one store |
-| removeAllStores() | Remove every store |
+| `addStore()` | Register a WooCommerce store |
+| `selectStore()` | Select a store |
+| `selectAllStores()` | Retrieve all stores |
+| `removeStore()` | Remove one store |
+| `removeAllStores()` | Remove all stores |
 
 ---
 
@@ -235,19 +351,24 @@ Unexpected failures throw exceptions after all retry attempts have been exhauste
 
 | Method | Description |
 |---------|-------------|
-| createProducts() | Batch create products |
-| updateProducts() | Batch update products |
-| updatePrices() | Batch update prices |
-| uploadImages() | Upload images |
-| getAllProducts() | Retrieve every product |
-| getProductIdsBySkus() | Resolve IDs from SKUs |
-| getCategories() | Get categories |
-| getAttributes() | Get attributes |
-| getManufacturers() | Get manufacturers |
+| `createProducts()` | Batch create products |
+| `updateProducts()` | Batch update products |
+| `updatePrices()` | Batch update prices |
+| `uploadImages()` | Upload images |
+| `uploadCategories()` | Synchronize categories |
+| `uploadAttributes()` | Synchronize attributes & terms |
+| `uploadTags()` | Synchronize tags |
+| `getAllProducts()` | Retrieve all products |
+| `getProductIdsBySkus()` | Resolve IDs from SKUs |
+| `getCategories()` | Retrieve categories |
+| `getAttributes()` | Retrieve attributes |
+| `getManufacturers()` | Retrieve manufacturer values |
 
 ---
 
-# Credentials
+# Types
+
+## Credentials
 
 ```ts
 interface CredentialsType {
@@ -263,19 +384,22 @@ interface CredentialsType {
 
 ---
 
-# Product Type
+## Product
 
 ```ts
 interface ProductType {
 	name: string;
+
 	sku: string;
 
 	price: number;
 
 	description?: string;
+
 	shortDescription?: string;
 
 	featuredImage?: string;
+
 	images?: string[];
 
 	categories?: {
@@ -293,23 +417,25 @@ interface ProductType {
 
 # Development
 
+Run tests.
+
 ```bash
 npm test
 ```
 
-Unit tests
+Run unit tests.
 
 ```bash
 npm run test:unit
 ```
 
-Integration tests
+Run integration tests.
 
 ```bash
 npm run test:e2e
 ```
 
-Coverage
+Generate coverage report.
 
 ```bash
 npm run test:coverage
@@ -319,9 +445,7 @@ npm run test:coverage
 
 # Contributing
 
-Contributions are welcome.
-
-Feel free to open issues, discuss ideas or submit pull requests.
+Contributions, ideas and pull requests are always welcome.
 
 ---
 
@@ -333,10 +457,10 @@ MIT
 
 # Links
 
-- GitHub Issues
-- GitHub Discussions
-- Telegram: https://t.me/snowinboots
+- 🐛 Issues
+- 💬 Discussions
+- 📬 Telegram: https://t.me/snowinboots
 
 ---
 
-Made with TypeScript and ❤️
+Built with TypeScript ❤️
