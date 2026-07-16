@@ -1,251 +1,342 @@
 # WooCommerce API Client
 
-![Tests](https://img.shields.io/github/actions/workflow/status/someTrickyCase/woo-api-client/ci.yaml?branch=main)
-![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
+A modern TypeScript client for the WooCommerce REST API with first-class support for multi-store applications, product synchronization, media uploads and batch operations.
 
-A TypeScript WooCommerce REST API client with multi-store support, batch operations, and image upload capabilities.
+Built for automation tools, ERP integrations and AI-powered product pipelines.
+
+---
 
 ## Features
 
-- 🏪 **Multi-store Management** - Work with multiple WooCommerce stores simultaneously
-- 🖼️ **Image Upload** - Upload images to WordPress media library
-- 📦 **Batch Operations** - Create/update multiple products in single request
-- 🏷️ **Product Management** - Full CRUD operations for products, categories, attributes
-- 🛡️ **Type Safety** - Full TypeScript support with comprehensive types
-- 🔄 **Automatic Retries** - Built-in retry logic for failed requests
-- 🧪 **Tested** - 96% test coverage with unit, e2e, and integration tests
+- 🏪 Multi-store support
+- 📦 Batch create and update operations
+- 🖼️ Automatic image uploads to the WordPress Media Library
+- 🛍️ Complete product management
+- 🏷️ Categories, attributes and manufacturer helpers
+- 🔄 Automatic retry mechanism for transient failures
+- 🧩 Fully typed TypeScript API
+- 🧪 High test coverage with unit and integration tests
 
-## Installation
+---
+
+# Installation
 
 ```bash
-npm install woo-api-client
+npm install @sometrickycase/woo-api-client
 ```
 
-## Quick Start
+---
 
-```typescript
-import { WooClient } from "woo-api-client";
+# Quick Start
 
-// Initialize client with store credentials
+```ts
+import { WooClient } from "@sometrickycase/woo-api-client";
+
 const client = new WooClient();
+
 client.addStore("main", {
-	store_url: "https://your-store.com",
-	wc_key: "your_consumer_key",
-	wc_secret: "your_consumer_secret",
-	wp_username: "your_wp_username",
-	wp_app_pass: "your_application_password",
+	store_url: "https://example.com",
+	wc_key: process.env.WC_KEY!,
+	wc_secret: process.env.WC_SECRET!,
+	wp_username: process.env.WP_USERNAME!,
+	wp_app_pass: process.env.WP_APP_PASSWORD!,
 });
 
-// Select store and start using API
 const store = client.selectStore("main");
 ```
 
-## Multi-Store Management
+---
 
-```typescript
+# Multi Store Support
+
+```ts
 const client = new WooClient();
 
-// Add multiple stores
-client.addStore('primary', { /_ credentials _/ });
-client.addStore('backup', { /_ credentials _/ });
-client.addStore('dev', { /_ credentials _/ });
+client.addStore("production", {...});
+client.addStore("staging", {...});
+client.addStore("development", {...});
 
-// Switch between stores
-const primaryStore = client.selectStore('primary');
-const backupStore = client.selectStore('backup');
+const production = client.selectStore("production");
+const staging = client.selectStore("staging");
 
-// Get all stores
-const allStores = client.selectAllStores();
+const stores = client.selectAllStores();
+```
 
-// Remove stores
-client.removeStore('dev');
+Remove stores when no longer needed.
+
+```ts
+client.removeStore("development");
 client.removeAllStores();
 ```
 
-## Product Management
+---
 
-### Create Products
+# Creating Products
 
-```typescript
-// Create single product
-const products = await store.createProducts([
+```ts
+await store.createProducts([
 	{
-		name: "Awesome Product",
-		sku: "AP-001",
-		price: 2999,
-		description: "Product description",
-		shortDescription: "Short desc",
-		featuredImage: "/path/to/featured.jpg",
-		images: ["/path/to/gallery1.jpg", "/path/to/gallery2.jpg"],
-		categories: [{ id: 123 }],
+		name: "Samsung Galaxy S24",
+		sku: "SM-S921",
+		price: 999,
+
+		description: "<p>Product description</p>",
+		shortDescription: "Short description",
+
+		featuredImage: "./images/main.jpg",
+
+		images: [
+			"./images/1.jpg",
+			"./images/2.jpg",
+		],
+
+		categories: [
+			{ id: 15 }
+		],
+
 		attributes: [
 			{
-				id: 1, // attribute ID
-				options: ["Samsung"], // attribute values
+				id: 3,
+				options: ["Samsung"],
+			},
+			{
+				id: 8,
+				options: ["Black"],
 			},
 		],
 	},
 ]);
 ```
 
-### Update Product Prices
+Images are uploaded automatically before product creation.
 
-```typescript
-// Update prices for multiple products
-const result = await store.updatePrices({
-	"SKU-001": 1999,
-	"SKU-002": 2499,
-	"SKU-003": 2999,
+---
+
+# Updating Products
+
+```ts
+await store.updateProducts([
+	{
+		id: 152,
+
+		price: 899,
+
+		shortDescription: "Now even cheaper!",
+
+		images: [
+			"./updated-image.jpg",
+		],
+	},
+]);
+```
+
+Only supplied fields are updated.
+
+---
+
+# Upload Images
+
+```ts
+const uploaded = await store.uploadImages([
+	"./images/1.jpg",
+	"./images/2.png",
+]);
+
+console.log(uploaded);
+
+// [
+//   { id: 123 },
+//   { id: 124 }
+// ]
+```
+
+---
+
+# Update Prices
+
+```ts
+await store.updatePrices({
+	"SKU-001": 1499,
+	"SKU-002": 1899,
+	"SKU-003": 999,
 });
 ```
 
-### Get Product IDs by SKUs
+---
 
-```typescript
-// Get product IDs for batch operations
-const productIds = await store.getProductIdsBySkus(["SKU-001", "SKU-002", "SKU-003"]);
-// Returns: [{ sku: 'SKU-001', id: 123 }, { sku: 'SKU-002', id: 124 }, ...]
+# Retrieve Products
+
+```ts
+const allProducts = await store.getAllProducts();
+
+const ids = await store.getProductIdsBySkus([
+	"SKU-001",
+	"SKU-002",
+]);
 ```
 
-## Media Management
+---
 
-### Upload Images
+# Categories
 
-```typescript
-// Upload images to WordPress media library
-const uploadedImages = await store.uploadImages(["/path/to/image1.jpg", "/path/to/image2.png"]);
-
-// Returns: [{ id: 123 }, { id: 124 }] - use these IDs in product creation
-```
-
-## Catalog Management
-
-### Get Categories
-
-```typescript
+```ts
 const categories = await store.getCategories();
-// Returns all product categories
 ```
 
-### Get Attributes
+---
 
-```typescript
+# Attributes
+
+```ts
 const attributes = await store.getAttributes();
-// Returns all product attributes
 ```
 
-### Get Manufacturers
+---
 
-```typescript
+# Manufacturers
+
+```ts
 const manufacturers = await store.getManufacturers();
-// Returns manufacturer attribute values
 ```
 
-## Error Handling
+---
 
-```typescript
+# Error Handling
+
+Every request automatically retries transient failures.
+
+```ts
 try {
-	await store.createProducts(productsData);
+	await store.createProducts(products);
 } catch (error) {
-	if (error.message.includes("HTTP 4")) {
-		// Client error (bad request, unauthorized, etc.)
-		console.error("Client error:", error.message);
-	} else {
-		// Network error or server error - automatically retried
-		console.error("Request failed after retries:", error.message);
-	}
+	console.error(error);
 }
 ```
 
-## API Reference
+Unexpected failures throw exceptions after all retry attempts have been exhausted.
 
-### WooClient Class
+---
 
-| Method                       | Description                                 |
-| ---------------------------- | ------------------------------------------- |
-| `addStore(key, credentials)` | Add store with credentials                  |
-| `selectStore(key)`           | Get Store instance for specific store       |
-| `selectAllStores()`          | Get array of Store instances for all stores |
-| `removeStore(key)`           | Remove store by key                         |
-| `removeAllStores()`          | Remove all stores                           |
+# API Overview
 
-### Store Class
+## WooClient
 
-| Method                       | Description                          |
-| ---------------------------- | ------------------------------------ |
-| `createProducts(products)`   | Create multiple products with images |
-| `updatePrices(priceUpdates)` | Update prices for multiple products  |
-| `getProductIdsBySkus(skus)`  | Get product IDs by SKU array         |
-| `uploadImages(imagePaths)`   | Upload images to media library       |
-| `getCategories()`            | Get all product categories           |
-| `getAttributes()`            | Get all product attributes           |
-| `getManufacturers()`         | Get manufacturer values              |
+| Method | Description |
+|---------|-------------|
+| addStore() | Register a WooCommerce store |
+| selectStore() | Get a Store instance |
+| selectAllStores() | Get all registered stores |
+| removeStore() | Remove one store |
+| removeAllStores() | Remove every store |
 
-### Types
+---
 
-```typescript
-interface ProductType {
-	name: string;
-	sku: string;
-	price: number;
-	description?: string;
-	shortDescription?: string;
-	featuredImage?: string;
-	images?: string[];
-	categories?: Array<{ id: number }>;
-	attributes?: Array<{
-		id: number;
-	}>;
-}
+## Store
 
+| Method | Description |
+|---------|-------------|
+| createProducts() | Batch create products |
+| updateProducts() | Batch update products |
+| updatePrices() | Batch update prices |
+| uploadImages() | Upload images |
+| getAllProducts() | Retrieve every product |
+| getProductIdsBySkus() | Resolve IDs from SKUs |
+| getCategories() | Get categories |
+| getAttributes() | Get attributes |
+| getManufacturers() | Get manufacturers |
+
+---
+
+# Credentials
+
+```ts
 interface CredentialsType {
 	store_url: string;
+
 	wc_key: string;
 	wc_secret: string;
+
 	wp_username?: string;
 	wp_app_pass?: string;
 }
 ```
 
-## Testing
+---
 
-```bash
+# Product Type
 
-# Run all tests
+```ts
+interface ProductType {
+	name: string;
+	sku: string;
 
-npm test
+	price: number;
 
-# Run unit tests only
+	description?: string;
+	shortDescription?: string;
 
-npm run test:unit
+	featuredImage?: string;
+	images?: string[];
 
-# Run e2e tests only
+	categories?: {
+		id: number;
+	}[];
 
-npm run test:e2e
-
-# Run with coverage
-
-npm run test:coverage
+	attributes?: {
+		id: number;
+		options: string[];
+	}[];
+}
 ```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-- 📧 Telegram: https://t.me/snowinboots
-- 🐛 [Issues](https://github.com/someTrickyCase/woo-api-client/issues)
-- 💬 [Discussions](https://github.com/someTrickyCase/woo-api-client/discussions)
 
 ---
 
-Built with :coconut:and TypeScript
+# Development
+
+```bash
+npm test
+```
+
+Unit tests
+
+```bash
+npm run test:unit
+```
+
+Integration tests
+
+```bash
+npm run test:e2e
+```
+
+Coverage
+
+```bash
+npm run test:coverage
+```
+
+---
+
+# Contributing
+
+Contributions are welcome.
+
+Feel free to open issues, discuss ideas or submit pull requests.
+
+---
+
+# License
+
+MIT
+
+---
+
+# Links
+
+- GitHub Issues
+- GitHub Discussions
+- Telegram: https://t.me/snowinboots
+
+---
+
+Made with TypeScript and ❤️
