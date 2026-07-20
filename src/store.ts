@@ -187,7 +187,7 @@ export default class Store {
 			attributes,
 		);
 	}
-	private async createAttributeTerms(
+	async createAttributeTerms(
 		attributeId: number,
 		terms: CreateAttributeType[],
 	) {
@@ -200,6 +200,11 @@ export default class Store {
 			JSON.stringify({
 				create: terms,
 			}),
+		);
+	}
+	async getAttributeTerms(attributeId: number) {
+		return await this.wcConnection.get(
+			`/wp-json/wc/v3/products/attributes/${attributeId}/terms/`,
 		);
 	}
 
